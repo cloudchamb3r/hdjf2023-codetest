@@ -2,7 +2,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 use libaes::Cipher;
 use regex;
 use reqwest;
-use scraper::{Html, Selector};
+use scraper::{ElementRef, Html, Selector};
 use serde_json::{self, Value};
 use text_io::read;
 fn encrypt(plain: &str) -> String {
@@ -21,7 +21,7 @@ async fn main() {
     let test_title = [
         "입사 후 맡게 된 첫 프로젝트!\n뭐부터 시작하면 좋을까?",
         "오랜만에 만난 입사 동기,\n\n힘들다고 고민 상담을 한다면?\n",
-        "나는 이런 사람이고 싶어!\n\n팀 내에서 맡고 싶은 포지션은?\n",
+        "나는 이런 사람이고 싶어!\n팀 내에서 맡고 싶은 포지션은?\n",
         "프로젝트를 진행하면서 어려움에 처했다면!?\n\n어떻게 하는 게 좋을까?\n",
         "드디어 찾아온 주말,\n\n어떻게 하루를 보내면 좋을까?\n",
         "신사업 아이디어 회의,\n자료를 어떻게 준비해야 할까?\n",
@@ -78,8 +78,6 @@ async fn main() {
         }
     }
 
-    println!("{}", answers.join("&"));
-
     let base_url = "https://www.hyundaijobfair2023.com";
     let client = reqwest::Client::new();
     let resp = client
@@ -97,7 +95,6 @@ async fn main() {
             let res: Value = serde_json::from_str(&resp).unwrap();
             if res["success"] == true {
                 let href = &res["href"].as_str().unwrap().trim_matches('"');
-                println!("{base_url}{href}");
                 let resp = client
                     .get(format!("{base_url}{href}"))
                     .send()
@@ -116,7 +113,6 @@ async fn main() {
                 let re = regex::Regex::new(r"`.+`").unwrap();
                 let mut result = vec![];
                 re.find_iter(&script_content).for_each(|x| {
-                    println!("{}", x.as_str());
                     result.push(x.as_str().trim_matches('`'));
                 });
                 println!("{}\n", result.join(" "));
@@ -126,10 +122,112 @@ async fn main() {
                     .select(&hash_sel)
                     .nth(0)
                     .unwrap()
+                    .text()
+                    .map(|x| x.trim())
+                    .fold(vec![], |mut acc: Vec<_>, cur: &str| {
+                        acc.push(cur);
+                        acc
+                    })
+                    .join(" ");
+                println!("{}\n", hash_content);
+
+                let title_sel = Selector::parse("strong.title").unwrap();
+                let title_content: String = document
+                    .select(&title_sel)
+                    .nth(0)
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .split_whitespace()
+                    .map(|x| format!("{x} "))
+                    .collect();
+                println!("☝ {title_content}");
+
+                let info_list_sel = Selector::parse(".info-list").unwrap();
+                let info_list_content = document
+                    .select(&info_list_sel)
+                    .nth(0)
+                    .unwrap()
                     .children()
-                    .for_each(|div| {
-                        println!("{}", div.value().as_text().unwrap().to_ascii_lowercase());
-                    });
+                    .filter_map(|child| ElementRef::wrap(child))
+                    .map(|e| {
+                        let desc = e
+                            .text()
+                            .collect::<String>()
+                            .split_whitespace()
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                        format!("- {desc}")
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                println!("{}", info_list_content);
+
+                let title_content: String = document
+                    .select(&title_sel)
+                    .nth(1)
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .split_whitespace()
+                    .map(|x| format!("{x} "))
+                    .collect();
+
+                println!("");
+                println!("⭐ {title_content}");
+
+                let intro_box_sel = Selector::parse(".intro-box").unwrap();
+                let intro_box_content = document
+                    .select(&intro_box_sel)
+                    .nth(0)
+                    .unwrap()
+                    .children()
+                    .filter_map(|child| ElementRef::wrap(child))
+                    .map(|e| e.text().collect::<String>())
+                    .collect::<Vec<_>>()
+                    .join(" : ");
+
+                println!("- {intro_box_content}");
+
+                let description_sel = Selector::parse(".description").unwrap();
+                let description_content = document
+                    .select(&description_sel)
+                    .nth(0)
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                println!("  {}\n", description_content);
+
+                let title_content: String = document
+                    .select(&title_sel)
+                    .nth(2)
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .split_whitespace()
+                    .map(|x| format!("{x} "))
+                    .collect();
+                println!("🤝 {title_content}");
+
+                let intro_box_content = document
+                    .select(&intro_box_sel)
+                    .nth(1)
+                    .unwrap()
+                    .children()
+                    .nth(1)
+                    .unwrap()
+                    .children()
+                    .filter_map(|child| ElementRef::wrap(child))
+                    .map(|e| e.text().collect::<String>())
+                    .collect::<String>()
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" : ");
+
+                println!("{intro_box_content}");
             }
         }
         _ => println!("‼ 서버로부터 데이터를 전송받지 못했습니다"),
