@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'hdjf2023-codetest'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=hdjf2023-codetest",
+                    "--package=hdjf2023-codetest"
+                ],
+                "filter": {
+                    "name": "hdjf2023-codetest",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'hdjf2023-codetest'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=hdjf2023-codetest",
+                    "--package=hdjf2023-codetest"
+                ],
+                "filter": {
+                    "name": "hdjf2023-codetest",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
