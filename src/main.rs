@@ -217,17 +217,28 @@ async fn main() {
                     .nth(1)
                     .unwrap()
                     .children()
-                    .nth(1)
+                    .filter_map(|x| ElementRef::wrap(x))
+                    .skip(1)
+                    .peekable()
+                    .peek()
                     .unwrap()
                     .children()
-                    .filter_map(|child| ElementRef::wrap(child))
-                    .map(|e| e.text().collect::<String>())
-                    .collect::<String>()
-                    .split_whitespace()
+                    .filter_map(|c| ElementRef::wrap(c))
+                    .map(|c| c.text().collect::<String>())
                     .collect::<Vec<_>>()
                     .join(" : ");
 
                 println!("{intro_box_content}");
+                let description_content = document
+                    .select(&description_sel)
+                    .nth(1)
+                    .unwrap()
+                    .text()
+                    .collect::<String>()
+                    .split_whitespace()
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                println!("  {}\n", description_content);
             }
         }
         _ => println!("‼ 서버로부터 데이터를 전송받지 못했습니다"),
